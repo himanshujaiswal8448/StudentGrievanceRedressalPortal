@@ -1,26 +1,36 @@
 import nodemailer from "nodemailer";
 
 export const sendEmail = async ({ to, subject, html }) => {
-  console.log("🟡 MAIL SERVICE CALLED");
-  console.log("SMTP_USER:", process.env.SMTP_USER);
-  console.log("SMTP_PASS EXISTS:", !!process.env.SMTP_PASS);
+  try {
+    console.log("🟡 MAIL SERVICE CALLED");
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: false, // MUST be false for 587
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false, // 🔥 REQUIRED ON RENDER
+      },
+    });
 
-  await transporter.sendMail({
-    from: `"Student Grievance Portal" <no-reply@studentgrievance.com>`,
-    to,
-    subject,
-    html,
-  });
+    // 🔍 Verify SMTP connection
+    await transporter.verify();
+    console.log("✅ SMTP connection verified");
 
-  console.log("📧 Email sent to:", to);
+    await transporter.sendMail({
+      from: `"Student Grievance Portal" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      html,
+    });
+
+    console.log("📧 Email sent to:", to);
+  } catch (err) {
+    console.error("❌ MAIL ERROR:", err);
+    throw err;
+  }
 };
