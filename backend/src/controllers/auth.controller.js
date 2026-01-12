@@ -153,6 +153,3 @@ export const verifyLoginOtp = async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 };
-
-console.log("OTP GENERATED:", otp);
-console.log("SENDING TO:", email);
