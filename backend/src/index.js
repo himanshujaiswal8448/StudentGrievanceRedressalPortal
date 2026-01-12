@@ -40,6 +40,16 @@ app.get("/", (req, res) => res.send("Grievance API running"));
 app.use("/api/auth", authRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/admin", adminRoutes);
+import { sendEmail } from "./services/mailService.js";
+
+app.get("/test-mail", async (req, res) => {
+  await sendEmail({
+    to: "your-email@gmail.com",
+    subject: "SMTP Test",
+    html: "<h1>SMTP WORKING</h1>",
+  });
+  res.send("Mail sent");
+});
 
 const PORT = process.env.PORT || 8080;
 connectDB().then(() =>
