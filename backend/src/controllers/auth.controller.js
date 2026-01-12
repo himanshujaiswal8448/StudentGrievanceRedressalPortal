@@ -31,15 +31,19 @@ export const register = async (req, res) => {
 
     console.log("📤 SENDING OTP TO:", email);
 
+    console.log("✅ OTP GENERATED (SIGNUP):", otp);
+
     await sendEmail({
       to: email,
       subject: "Verify Your Account – OTP",
       html: `
-        <h2>Student Grievance Portal</h2>
-        <p>Your verification OTP is:</p>
-        <h1>${otp}</h1>
-        <p>Valid for 10 minutes</p>
-      `,
+    <p>Hello,</p>
+    <p>Your verification code is:</p>
+    <p style="font-size:18px; font-weight:bold; letter-spacing:3px;">
+      ${otp.split("").join(" ")}
+    </p>
+    <p>This code expires in 10 minutes.</p>
+  `,
     });
 
     return res.status(201).json({
@@ -99,14 +103,18 @@ export const login = async (req, res) => {
     user.otpExpiry = Date.now() + 5 * 60 * 1000; // 5 min
     await user.save();
 
+    console.log("✅ OTP GENERATED (LOGIN):", otp);
+
     await sendEmail({
       to: email,
       subject: "Login OTP – Student Grievance Portal",
       html: `
-        <p>Your login OTP is:</p>
-        <h1>${otp}</h1>
-        <p>Valid for 5 minutes</p>
-      `,
+    <p>Your login verification code is:</p>
+    <p style="font-size:18px; font-weight:bold; letter-spacing:3px;">
+      ${otp.split("").join(" ")}
+    </p>
+    <p>Valid for 5 minutes.</p>
+  `,
     });
 
     return res.json({ message: "Login OTP sent to email" });
