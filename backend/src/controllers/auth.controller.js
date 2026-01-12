@@ -7,8 +7,6 @@ import { sendEmail } from "../services/mailService.js";
 // REGISTER (SEND OTP)
 
 export const register = async (req, res) => {
-  console.log("🔥 REGISTER API HIT:", req.body.email);
-
   try {
     const { name, email, password, department } = req.body;
 
@@ -28,10 +26,6 @@ export const register = async (req, res) => {
       otpExpiry: Date.now() + 10 * 60 * 1000, // 10 min
       isVerified: false,
     });
-
-    console.log("📤 SENDING OTP TO:", email);
-
-    console.log("✅ OTP GENERATED (SIGNUP):", otp);
 
     await sendEmail({
       to: email,
@@ -87,8 +81,6 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("Login attempt for:", email);
-
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
@@ -102,8 +94,6 @@ export const login = async (req, res) => {
     user.otp = otp;
     user.otpExpiry = Date.now() + 5 * 60 * 1000; // 5 min
     await user.save();
-
-    console.log("✅ OTP GENERATED (LOGIN):", otp);
 
     await sendEmail({
       to: email,
