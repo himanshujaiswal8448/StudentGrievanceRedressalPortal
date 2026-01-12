@@ -44,7 +44,7 @@ app.use("/api/admin", adminRoutes);
 
 app.get("/test-mail", async (req, res) => {
   await sendEmail({
-    to: "YOUR_PERSONAL_EMAIL@gmail.com",
+    to: "himanshuku9708@gmail.com",
     subject: "SMTP Test Success",
     html: "<h1>Brevo SMTP is WORKING 🎉</h1>",
   });
