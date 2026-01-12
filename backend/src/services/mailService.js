@@ -9,7 +9,7 @@ export const sendEmail = async ({ to, subject, html }) => {
       {
         sender: {
           name: "Student Grievance Portal",
-          email: "no-reply@studentgrievance.com",
+          email: process.env.BREVO_SENDER,
         },
         to: [{ email: to }],
         subject,
@@ -20,16 +20,14 @@ export const sendEmail = async ({ to, subject, html }) => {
           "api-key": process.env.BREVO_API_KEY,
           "Content-Type": "application/json",
         },
-        timeout: 10000,
       }
     );
 
-    console.log("📧 Email sent via Brevo API:", response.data);
-  } catch (err) {
+    console.log("📧 Email sent:", response.data);
+  } catch (error) {
     console.error(
-      "❌ BREVO API MAIL ERROR:",
-      err.response?.data || err.message
+      "❌ BREVO MAIL ERROR:",
+      error.response?.data || error.message
     );
-    throw err;
   }
 };
