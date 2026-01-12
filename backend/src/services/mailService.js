@@ -1,38 +1,35 @@
-import nodemailer from "nodemailer";
+import axios from "axios";
 
 export const sendEmail = async ({ to, subject, html }) => {
   try {
-    console.log("🟡 MAIL SERVICE CALLED");
+    console.log("🟡 BREVO API MAIL SERVICE CALLED");
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false, // MUST be false for 587
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "Student Grievance Portal",
+          email: "no-reply@studentgrievance.com",
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
       },
-      tls: {
-        ciphers: "SSLv3",
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 10000,
-    });
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+        timeout: 10000,
+      }
+    );
 
-    console.log("⏳ Verifying SMTP...");
-    await transporter.verify();
-    console.log("✅ SMTP verified");
-
-    await transporter.sendMail({
-      from: `"Student Grievance Portal" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
-    });
-
-    console.log("📧 Email sent to:", to);
+    console.log("📧 Email sent via Brevo API:", response.data);
   } catch (err) {
-    console.error("❌ MAIL ERROR:", err);
+    console.error(
+      "❌ BREVO API MAIL ERROR:",
+      err.response?.data || err.message
+    );
     throw err;
   }
 };
