@@ -3,6 +3,8 @@ import axios from "axios";
 export const sendEmail = async ({ to, subject, html }) => {
   try {
     console.log("🟡 BREVO API MAIL SERVICE CALLED");
+    console.log("📤 Sending to:", to);
+    console.log("📨 Sender:", process.env.BREVO_SENDER);
 
     const response = await axios.post(
       "https://api.brevo.com/v3/smtp/email",
@@ -23,7 +25,7 @@ export const sendEmail = async ({ to, subject, html }) => {
       }
     );
 
-    console.log("📧 Email sent:", response.data);
+    console.log("📧 Email accepted by Brevo:", response.data);
   } catch (error) {
     console.error(
       "❌ BREVO MAIL ERROR:",
