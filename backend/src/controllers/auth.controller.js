@@ -7,6 +7,8 @@ import { sendEmail } from "../services/mailService.js";
 // REGISTER (SEND OTP)
 
 export const register = async (req, res) => {
+  console.log("🔥 REGISTER API HIT:", req.body.email);
+
   try {
     const { name, email, password, department } = req.body;
 
@@ -27,6 +29,8 @@ export const register = async (req, res) => {
       isVerified: false,
     });
 
+    console.log("📤 SENDING OTP TO:", email);
+
     await sendEmail({
       to: email,
       subject: "Verify Your Account – OTP",
@@ -44,6 +48,8 @@ export const register = async (req, res) => {
     });
   } catch (e) {
     console.error("REGISTER ERROR:", e);
+    console.error("❌ REGISTER ERROR FULL:", e);
+
     return res.status(500).json({ message: e.message });
   }
 };
