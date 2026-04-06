@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import client from "../api/client.js";
 import ComplaintForm from "./ComplaintForm.jsx";
+import ChatBox from "../components/ChatBox.jsx";
 
 export default function StudentDashboard() {
   const { darkMode } = useOutletContext(); // ✅ Get from layout
@@ -114,38 +115,43 @@ export default function StudentDashboard() {
               </thead>
               <tbody>
                 {mine.map((r) => (
-                  <tr
-                    key={r._id}
-                    className={`border-b ${
-                      darkMode
-                        ? "border-gray-700 hover:bg-gray-800"
-                        : "border-gray-200 hover:bg-gray-50"
-                    } transition`}
-                  >
-                    <td className="px-4 py-2">{r.title}</td>
-                    <td className="px-4 py-2 capitalize">{r.category}</td>
-                    <td className="px-4 py-2 capitalize">{r.priority}</td>
-                    <td className="px-4 py-2 capitalize">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          r.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : r.status === "in_progress"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {r.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      {new Date(r.createdAt).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                  </tr>
+                  <React.Fragment key={r._id}>
+                    {/* Existing Row */}
+                    <tr
+                      className={`border-b ${
+                        darkMode
+                          ? "border-gray-700 hover:bg-gray-800"
+                          : "border-gray-200 hover:bg-gray-50"
+                      } transition`}
+                    >
+                      <td className="px-4 py-2">{r.title}</td>
+                      <td className="px-4 py-2 capitalize">{r.category}</td>
+                      <td className="px-4 py-2 capitalize">{r.priority}</td>
+                      <td className="px-4 py-2 capitalize">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            r.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : r.status === "in_progress"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {r.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        {new Date(r.createdAt).toLocaleDateString("en-IN")}
+                      </td>
+                    </tr>
+
+                    {/* 👇 CHAT BOX ROW (NEW) */}
+                    <tr>
+                      <td colSpan="5" className="p-3">
+                        <ChatBox complaintId={r._id} />
+                      </td>
+                    </tr>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
