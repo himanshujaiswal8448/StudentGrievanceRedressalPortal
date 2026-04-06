@@ -18,11 +18,22 @@ const __dirname = path.dirname(__filename);
 app.use(helmet());
 // app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://himanshu-grievance.onrender.com",
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
@@ -34,7 +45,7 @@ app.use(
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     next();
   },
-  express.static(path.join(__dirname, "../uploads"))
+  express.static(path.join(__dirname, "../uploads")),
 );
 
 app.get("/", (req, res) => res.send("Grievance API running"));
@@ -53,5 +64,5 @@ app.get("/test-mail", async (req, res) => {
 
 const PORT = process.env.PORT || 8080;
 connectDB().then(() =>
-  app.listen(PORT, () => console.log(`🚀 Server listening on ${PORT} 🚀`))
+  app.listen(PORT, () => console.log(`🚀 Server listening on ${PORT} 🚀`)),
 );
