@@ -3,12 +3,20 @@ import { useOutletContext } from "react-router-dom";
 import client from "../api/client.js";
 import ComplaintForm from "./ComplaintForm.jsx";
 import ChatBox from "../components/ChatBox.jsx";
+import socket from "../socket";
+import toast from "react-hot-toast";
 
 export default function StudentDashboard() {
-  const { darkMode } = useOutletContext(); // ✅ Get from layout
+  const { darkMode } = useOutletContext();
+
   const [mine, setMine] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
+  const [notifications, setNotifications] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // ✅ fetch complaints
   const fetchComplaints = async () => {
     try {
       const { data } = await client.get("/complaints/mine");
@@ -22,159 +30,218 @@ export default function StudentDashboard() {
     fetchComplaints();
   }, []);
 
-  const resolvedCount = mine.filter((m) => m.status === "resolved").length;
-  const pendingCount = mine.filter((m) => m.status === "pending").length;
-  const inProgressCount = mine.filter((m) => m.status === "in_progress").length;
+  // ✅ JOIN ROOMS
+  useEffect(() => {
+    if (!mine.length) return;
+
+    mine.forEach((c) => socket.emit("joinRoom", c._id));
+
+    return () => {
+      mine.forEach((c) => socket.emit("leaveRoom", c._id));
+    };
+  }, [mine]);
+
+  // ✅ SOCKET LISTENER
+  useEffect(() => {
+    const handler = (msg) => {
+      if (msg.sender !== "admin") return;
+
+      const complaint = mine.find((c) => c._id === msg.complaintId);
+
+      const newNotification = {
+        id: Date.now(),
+        complaintId: msg.complaintId,
+        title: complaint?.title || "Complaint",
+        message: msg.message,
+      };
+
+      // avoid duplicate
+      setNotifications((prev) => {
+        const exists = prev.find((n) => n.complaintId === msg.complaintId);
+        if (exists) return prev;
+        return [newNotification, ...prev];
+      });
+
+      // toast
+      toast.custom((t) => (
+        <div
+          onClick={() => {
+            setSelectedId(msg.complaintId);
+            setNotifications((prev) =>
+              prev.filter((n) => n.complaintId !== msg.complaintId),
+            );
+            toast.dismiss(t.id);
+          }}
+          className="cursor-pointer bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg border border-gray-700"
+        >
+          <p className="font-semibold">💬 {newNotification.title}</p>
+          <p className="text-xs text-gray-400 truncate">
+            {newNotification.message}
+          </p>
+        </div>
+      ));
+    };
+
+    socket.off("receiveMessage");
+    socket.on("receiveMessage", handler);
+
+    return () => socket.off("receiveMessage", handler);
+  }, [mine]);
+
+  // stats
+  const resolved = mine.filter((m) => m.status === "resolved").length;
+  const pending = mine.filter((m) => m.status === "pending").length;
+  const inProgress = mine.filter((m) => m.status === "in_progress").length;
 
   const summary = [
-    {
-      title: "Total Complaints",
-      value: mine.length,
-      color: "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100",
-    },
+    { title: "Total", value: mine.length, color: "bg-gray-800 text-white" },
     {
       title: "Pending",
-      value: pendingCount,
-      color:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100",
+      value: pending,
+      color: "bg-yellow-500/20 text-yellow-400",
     },
     {
       title: "In Progress",
-      value: inProgressCount,
-      color: "bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100",
+      value: inProgress,
+      color: "bg-blue-500/20 text-blue-400",
     },
     {
       title: "Resolved",
-      value: resolvedCount,
-      color:
-        "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100",
+      value: resolved,
+      color: "bg-green-500/20 text-green-400",
     },
   ];
 
   return (
     <div
-      className={`min-h-screen p-6 transition-colors ${
+      className={`min-h-screen p-6 ${
         darkMode ? "bg-gray-950 text-gray-100" : "bg-gray-50 text-gray-900"
       }`}
     >
-      {/* ===== Header ===== */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Student Dashboard</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow"
-        >
-          + New Complaint
-        </button>
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Student Dashboard</h1>
+
+        <div className="flex items-center gap-4">
+          {/* 🔔 BELL */}
+          <div className="relative">
+            <div
+              onClick={() => setShowDropdown((p) => !p)}
+              className="cursor-pointer"
+            >
+              🔔
+              {notifications.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
+                  {notifications.length}
+                </span>
+              )}
+            </div>
+
+            {/* 🔽 DROPDOWN */}
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50">
+                <div className="p-3 border-b border-gray-700 text-sm font-semibold">
+                  Notifications
+                </div>
+
+                {notifications.length === 0 ? (
+                  <p className="p-3 text-gray-400 text-sm">No new messages</p>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        setSelectedId(n.complaintId);
+                        setNotifications((prev) =>
+                          prev.filter((x) => x.id !== n.id),
+                        );
+                        setShowDropdown(false);
+                      }}
+                      className="p-3 border-b border-gray-800 hover:bg-gray-800 cursor-pointer"
+                    >
+                      <p className="text-sm font-medium">💬 {n.title}</p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {n.message}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+          >
+            + Complaint
+          </button>
+        </div>
       </div>
 
-      {/* ===== Summary Cards ===== */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* STATS */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {summary.map((c) => (
-          <div
-            key={c.title}
-            className={`p-5 rounded-2xl shadow hover:shadow-lg transition ${c.color}`}
-          >
-            <h3 className="text-lg font-medium">{c.title}</h3>
-            <p className="text-3xl font-bold mt-2">{c.value}</p>
+          <div key={c.title} className={`p-4 rounded-xl ${c.color}`}>
+            <h3>{c.title}</h3>
+            <p className="text-2xl font-bold">{c.value}</p>
           </div>
         ))}
       </div>
 
-      {/* ===== Complaints Table ===== */}
-      <div
-        className={`rounded-2xl shadow p-5 ${
-          darkMode ? "bg-gray-900/70 border border-gray-800" : "bg-white"
-        }`}
-      >
-        <h2 className="text-lg font-semibold mb-3">My Complaints</h2>
+      {/* TABLE */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
+        <h2 className="mb-3 font-semibold">My Complaints</h2>
 
-        {mine.length === 0 ? (
-          <p className="text-gray-500 italic">No complaints found.</p>
-        ) : (
-          <div className="overflow-x-auto mt-4">
-            <table className="min-w-full text-sm border-collapse">
-              <thead>
-                <tr
-                  className={`text-left ${
-                    darkMode ? "bg-gray-800 text-gray-200" : "bg-gray-100"
-                  }`}
-                >
-                  {[
-                    "Title",
-                    "Category",
-                    "Priority",
-                    "Status",
-                    "Created At",
-                  ].map((h) => (
-                    <th key={h} className="px-4 py-2 font-medium">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {mine.map((r) => (
-                  <React.Fragment key={r._id}>
-                    {/* Existing Row */}
-                    <tr
-                      className={`border-b ${
-                        darkMode
-                          ? "border-gray-700 hover:bg-gray-800"
-                          : "border-gray-200 hover:bg-gray-50"
-                      } transition`}
-                    >
-                      <td className="px-4 py-2">{r.title}</td>
-                      <td className="px-4 py-2 capitalize">{r.category}</td>
-                      <td className="px-4 py-2 capitalize">{r.priority}</td>
-                      <td className="px-4 py-2 capitalize">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            r.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : r.status === "in_progress"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {r.status.replace("_", " ")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        {new Date(r.createdAt).toLocaleDateString("en-IN")}
-                      </td>
-                    </tr>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left border-b">
+              <th>Title</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
 
-                    {/* 👇 CHAT BOX ROW (NEW) */}
-                    <tr>
-                      <td colSpan="5" className="p-3">
-                        <ChatBox complaintId={r._id} />
-                      </td>
-                    </tr>
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+          <tbody>
+            {mine.map((r) => (
+              <tr
+                key={r._id}
+                onClick={() => {
+                  setSelectedId(r._id);
+                  setNotifications([]);
+                }}
+                className="cursor-pointer border-b hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <td className="py-2">{r.title}</td>
+                <td>{r.category}</td>
+                <td>{r.status}</td>
+                <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* ===== Complaint Form Modal ===== */}
+      {/* CHAT */}
+      {selectedId && (
+        <ChatBox
+          key={selectedId}
+          complaintId={selectedId}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
+
+      {/* MODAL */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 backdrop-blur-sm">
-          <div
-            className={`w-full max-w-lg rounded-2xl p-6 shadow-2xl relative ${
-              darkMode ? "bg-gray-900 text-gray-100" : "bg-white"
-            }`}
-          >
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+          <div className="bg-white dark:bg-gray-900 p-5 rounded-xl w-full max-w-md relative">
             <button
               onClick={() => setShowForm(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl"
+              className="absolute top-2 right-3 text-xl"
             >
               ×
             </button>
-
-            <h2 className="text-xl font-semibold mb-4">Submit Complaint</h2>
 
             <ComplaintForm
               onSuccess={() => {

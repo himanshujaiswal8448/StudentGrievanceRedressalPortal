@@ -15,14 +15,17 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import VerifySignupOtp from "./pages/VerifySignupOtp.jsx";
 import VerifyLoginOtp from "./pages/VerifyLoginOtp.jsx";
 
+import { Toaster } from "react-hot-toast";
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* 🔥 THIS WAS MISSING */}
+        <Toaster position="top-right" reverseOrder={false} />
+
         <Routes>
           {/* ================= PUBLIC ROUTES ================= */}
-          {/* TopBar + Footer from GeneralLayout */}
-
           <Route element={<GeneralLayout />}>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
@@ -32,7 +35,6 @@ export default function App() {
           </Route>
 
           {/* ================= PROTECTED ROUTES ================= */}
-          {/* TopBar + Footer from DashboardLayout */}
           <Route
             element={
               <ProtectedRoute>
@@ -40,10 +42,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            {/* Student */}
             <Route path="/dashboard" element={<StudentDashboard />} />
 
-            {/* Admin */}
             <Route
               path="/admin"
               element={

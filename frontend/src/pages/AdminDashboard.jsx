@@ -5,9 +5,11 @@ import toast from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { ClipboardList, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
+import AdminChat from "../components/AdminChat";
 
 export default function AdminDashboard() {
-  const { darkMode } = useOutletContext(); // ✅ Get theme from layout
+  const { darkMode } = useOutletContext();
+
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState({ status: "", category: "" });
   const [stats, setStats] = useState({
@@ -15,15 +17,18 @@ export default function AdminDashboard() {
     in_progress: 0,
     resolved: 0,
   });
+  const [selectedComplaintId, setSelectedComplaintId] = useState(null);
 
   const fetchList = async () => {
     try {
       const params = new URLSearchParams(filter);
       const { data } = await client.get(`/admin/complaints?${params}`);
       setList(data);
+
       const pending = data.filter((r) => r.status === "pending").length;
       const inProgress = data.filter((r) => r.status === "in_progress").length;
       const resolved = data.filter((r) => r.status === "resolved").length;
+
       setStats({ pending, in_progress: inProgress, resolved });
     } catch {
       toast.error("Failed to fetch complaints.");
@@ -50,6 +55,7 @@ export default function AdminDashboard() {
   };
 
   const COLORS = ["#FACC15", "#3B82F6", "#22C55E"];
+
   const chartData = [
     { name: "Pending", value: stats.pending },
     { name: "In Progress", value: stats.in_progress },
@@ -92,7 +98,7 @@ export default function AdminDashboard() {
           <motion.div
             whileHover={{ scale: 1.05 }}
             key={label}
-            className={`p-5 rounded-2xl shadow-lg bg-gray-900/70 border border-gray-800 backdrop-blur-md flex justify-between items-center`}
+            className="p-5 rounded-2xl shadow-lg bg-gray-900/70 border border-gray-800 flex justify-between items-center"
           >
             <div>
               <h3 className="text-sm text-gray-400">{label}</h3>
@@ -112,10 +118,15 @@ export default function AdminDashboard() {
         ) : (
           list.map((r) => (
             <motion.div
-              whileHover={{ scale: 1.02 }}
               key={r._id}
-              className={`p-6 rounded-2xl shadow-lg border backdrop-blur-md ${
-                darkMode ? "bg-gray-900/70 border-gray-800" : "bg-white"
+              onClick={() => setSelectedComplaintId(r._id)}
+              whileHover={{ scale: 1.02 }}
+              className={`p-6 rounded-2xl shadow-lg border cursor-pointer ${
+                selectedComplaintId === r._id
+                  ? "border-blue-500 bg-blue-500/10"
+                  : darkMode
+                    ? "bg-gray-900/70 border-gray-800"
+                    : "bg-white"
               }`}
             >
               <div className="flex justify-between items-start mb-3">
@@ -130,8 +141,8 @@ export default function AdminDashboard() {
                     r.status === "pending"
                       ? "bg-yellow-500/20 text-yellow-400"
                       : r.status === "in_progress"
-                      ? "bg-blue-500/20 text-blue-400"
-                      : "bg-green-500/20 text-green-400"
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "bg-green-500/20 text-green-400"
                   }`}
                 >
                   {r.status.replace("_", " ")}
@@ -151,6 +162,7 @@ export default function AdminDashboard() {
                       href={getImageUrl(file.path)}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <img
                         src={getImageUrl(file.path)}
@@ -166,11 +178,15 @@ export default function AdminDashboard() {
                 <small className="text-gray-500 text-xs">
                   {new Date(r.updatedAt).toLocaleDateString("en-IN")}
                 </small>
+
                 <div className="flex gap-2">
                   {["pending", "in_progress", "resolved"].map((s) => (
                     <button
                       key={s}
-                      onClick={() => updateStatus(r._id, s)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // ✅ FIX
+                        updateStatus(r._id, s);
+                      }}
                       disabled={r.status === s}
                       className={`px-3 py-1.5 text-xs rounded-lg ${
                         r.status === s
@@ -189,23 +205,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* Chart */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className={`mt-10 rounded-2xl shadow-lg p-6 backdrop-blur-md ${
-          darkMode ? "bg-gray-900/70 border border-gray-800" : "bg-white"
-        }`}
-      >
+      <motion.div className="mt-10 rounded-2xl shadow-lg p-6 bg-gray-900/70 border border-gray-800">
         <h2 className="text-lg font-semibold mb-3">Complaint Distribution</h2>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
-            <Pie
-              data={chartData}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={100}
-              label
-            >
+            <Pie data={chartData} dataKey="value" outerRadius={100} label>
               {chartData.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
@@ -214,6 +218,26 @@ export default function AdminDashboard() {
           </PieChart>
         </ResponsiveContainer>
       </motion.div>
+
+      {/* Chat */}
+      {selectedComplaintId && (
+        <div className="mt-6 p-4 rounded-xl border border-blue-500 bg-gray-900/60">
+          <div className="flex justify-between mb-2">
+            <h3 className="text-lg font-semibold">Complaint Chat</h3>
+            <button
+              onClick={() => setSelectedComplaintId(null)}
+              className="text-red-400 text-sm"
+            >
+              Close ❌
+            </button>
+          </div>
+
+          <AdminChat
+            complaintId={selectedComplaintId}
+            onClose={() => setSelectedComplaintId(null)}
+          />
+        </div>
+      )}
     </div>
   );
 }

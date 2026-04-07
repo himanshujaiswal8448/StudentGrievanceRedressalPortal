@@ -2,12 +2,12 @@ import { useEffect, useState, useRef } from "react";
 import client from "../api/client";
 import socket from "../socket";
 
-export default function ChatBox({ complaintId, onClose }) {
+export default function AdminChat({ complaintId, onClose }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const bottomRef = useRef(null);
 
-  // ✅ JOIN / LEAVE ROOM
+  // ✅ JOIN / LEAVE ROOM (FIXED)
   useEffect(() => {
     if (!complaintId) return;
 
@@ -27,7 +27,7 @@ export default function ChatBox({ complaintId, onClose }) {
     });
   }, [complaintId]);
 
-  // ✅ REALTIME RECEIVE
+  // ✅ REALTIME RECEIVE (FILTERED)
   useEffect(() => {
     const handler = (msg) => {
       if (msg.complaintId === complaintId) {
@@ -47,14 +47,14 @@ export default function ChatBox({ complaintId, onClose }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ✅ SEND
+  // ✅ SEND MESSAGE
   const sendMessage = () => {
     if (!text.trim()) return;
 
     socket.emit("sendMessage", {
       complaintId,
       message: text,
-      sender: "user",
+      sender: "admin",
     });
 
     setText("");
@@ -65,7 +65,7 @@ export default function ChatBox({ complaintId, onClose }) {
       {/* HEADER */}
       <div className="px-4 py-3 bg-gray-900 border-b border-gray-800 flex justify-between items-center">
         <div>
-          <h2 className="font-semibold text-sm">Support Chat 💬</h2>
+          <h2 className="font-semibold text-sm">Admin Support 🛠️</h2>
           <p className="text-xs text-gray-400">
             Complaint #{complaintId?.slice(-5)}
           </p>
@@ -81,24 +81,24 @@ export default function ChatBox({ complaintId, onClose }) {
       {/* MESSAGES */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((m, i) => {
-          const isUser = m.sender === "user";
+          const isAdmin = m.sender === "admin";
 
           return (
             <div
               key={i}
-              className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+              className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}
             >
               <div className="flex flex-col max-w-[75%]">
                 {/* sender */}
                 <span className="text-[10px] text-gray-400 mb-1">
-                  {isUser ? "You" : "Admin"}
+                  {isAdmin ? "You (Admin)" : "User"}
                 </span>
 
-                {/* bubble */}
+                {/* message bubble */}
                 <div
                   className={`px-4 py-2 rounded-2xl text-sm shadow ${
-                    isUser
-                      ? "bg-blue-600 rounded-br-none"
+                    isAdmin
+                      ? "bg-green-600 rounded-br-none"
                       : "bg-gray-800 rounded-bl-none"
                   }`}
                 >
@@ -125,13 +125,13 @@ export default function ChatBox({ complaintId, onClose }) {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="Reply to user..."
           className="flex-1 px-3 py-2 bg-gray-800 rounded-lg outline-none text-sm"
         />
 
         <button
           onClick={sendMessage}
-          className="bg-blue-600 hover:bg-blue-700 px-4 rounded-lg text-sm"
+          className="bg-green-600 hover:bg-green-700 px-4 rounded-lg text-sm"
         >
           Send
         </button>
