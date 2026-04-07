@@ -34,10 +34,22 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (!mine.length) return;
 
-    mine.forEach((c) => socket.emit("joinRoom", c._id));
+    const joinRooms = () => {
+      mine.forEach((c) => {
+        socket.emit("joinRoom", c._id);
+        console.log("✅ Joined:", c._id);
+      });
+    };
+
+    if (socket.connected) {
+      joinRooms(); // already connected
+    } else {
+      socket.on("connect", joinRooms); // wait for connect
+    }
 
     return () => {
       mine.forEach((c) => socket.emit("leaveRoom", c._id));
+      socket.off("connect", joinRooms);
     };
   }, [mine]);
 
