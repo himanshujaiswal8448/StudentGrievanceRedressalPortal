@@ -18,26 +18,26 @@ import ChatMessage from "./models/ChatMessage.js";
 
 const app = express();
 
-// ✅ path setup
+// path setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ middlewares
-app.use(helmet());
-
+// allowed origins
 const allowedOrigins = [
   "http://localhost:5173",
   "https://himanshu-grievance.onrender.com",
 ];
 
+// middlewares
+app.use(helmet());
+
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS not allowed"));
+        return callback(null, true);
       }
+      return callback(new Error("CORS not allowed"));
     },
     credentials: true,
   }),
@@ -46,7 +46,7 @@ app.use(
 app.use(express.json());
 app.use(morgan("dev"));
 
-// ✅ static uploads
+// static uploads
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -56,7 +56,7 @@ app.use(
   express.static(path.join(__dirname, "../uploads")),
 );
 
-// ✅ routes
+// routes
 app.get("/", (req, res) => res.send("Grievance API running"));
 
 app.use("/api/auth", authRoutes);
@@ -64,47 +64,61 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/chat", chatRoutes);
 
-// ✅ test mail
+// test mail
 app.get("/test-mail", async (req, res) => {
-  await sendEmail({
-    to: "himanshuku9708@gmail.com",
-    subject: "SMTP Test Success",
-    html: "<h1>Brevo SMTP is WORKING 🎉</h1>",
-  });
-  res.send("Mail sent");
+  try {
+    await sendEmail({
+      to: "himanshuku9708@gmail.com",
+      subject: "SMTP Test Success",
+      html: "<h1>Brevo SMTP is WORKING 🎉</h1>",
+    });
+    res.send("Mail sent");
+  } catch (err) {
+    console.error("MAIL ERROR:", err);
+    res.status(500).send("Mail failed");
+  }
 });
 
-// ✅ PORT
+// start server
 const PORT = process.env.PORT || 8080;
 
-// ✅ connect DB first
 await connectDB();
 
-// ✅ start server ONLY ONCE
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server listening on ${PORT} 🚀`);
 });
 
-// ✅ socket setup (IMPORTANT)
+// socket setup
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
-// ✅ socket logic
+// ✅ SINGLE CLEAN SOCKET BLOCK (FINAL)
 io.on("connection", (socket) => {
   console.log("🔌 User connected:", socket.id);
 
   // join room
   socket.on("joinRoom", (complaintId) => {
+    if (!complaintId) return;
     socket.join(complaintId);
+    console.log(`📥 Joined room: ${complaintId}`);
+  });
+
+  // leave room
+  socket.on("leaveRoom", (complaintId) => {
+    if (!complaintId) return;
+    socket.leave(complaintId);
+    console.log(`📤 Left room: ${complaintId}`);
   });
 
   // send message
   socket.on("sendMessage", async ({ complaintId, message, sender }) => {
     try {
-      console.log("📩 MESSAGE:", { complaintId, message, sender });
+      if (!complaintId || !message || !sender) return;
 
       const newMsg = await ChatMessage.create({
         complaintId,
@@ -112,10 +126,9 @@ io.on("connection", (socket) => {
         sender,
       });
 
-      // emit to room
       io.to(complaintId).emit("receiveMessage", newMsg);
     } catch (err) {
-      console.error("❌ CHAT ERROR:", err);
+      console.error("❌ SOCKET ERROR:", err);
     }
   });
 
