@@ -3,7 +3,13 @@ import { useOutletContext } from "react-router-dom";
 import client from "../api/client.js";
 import toast from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { ClipboardList, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import {
+  ClipboardList,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Search,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import AdminChat from "../components/AdminChat";
 
@@ -12,6 +18,7 @@ export default function AdminDashboard() {
 
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState({ status: "", category: "" });
+  const [search, setSearch] = useState(""); // 🔥 NEW
   const [stats, setStats] = useState({
     pending: 0,
     in_progress: 0,
@@ -21,7 +28,11 @@ export default function AdminDashboard() {
 
   const fetchList = async () => {
     try {
-      const params = new URLSearchParams(filter);
+      const params = new URLSearchParams({
+        ...filter,
+        search, // 🔥 NEW
+      });
+
       const { data } = await client.get(`/admin/complaints?${params}`);
       setList(data);
 
@@ -34,6 +45,15 @@ export default function AdminDashboard() {
       toast.error("Failed to fetch complaints.");
     }
   };
+
+  // 🔥 debounce search
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      fetchList();
+    }, 400);
+
+    return () => clearTimeout(delay);
+  }, [search, filter]);
 
   useEffect(() => {
     fetchList();
@@ -68,10 +88,22 @@ export default function AdminDashboard() {
         darkMode ? "bg-gray-950 text-gray-100" : "bg-gray-50 text-gray-900"
       }`}
     >
-      <h1 className="text-3xl font-semibold mb-8 flex items-center gap-2">
+      <h1 className="text-3xl font-semibold mb-6 flex items-center gap-2">
         <ClipboardList size={26} className="text-blue-400" />
         Admin Dashboard
       </h1>
+
+      {/* 🔥 SEARCH BAR */}
+      <div className="mb-6 relative">
+        <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+        <input
+          type="text"
+          placeholder="Search complaints (name, mail, title, category...)"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 rounded-xl bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+        />
+      </div>
 
       {/* Stats */}
       <div className="grid sm:grid-cols-3 gap-6 mb-8">
@@ -154,6 +186,7 @@ export default function AdminDashboard() {
                 <span className="text-blue-400 font-medium">{r.category}</span>
               </p>
 
+              {/* Attachments */}
               {r.attachments?.length > 0 && (
                 <div className="flex gap-2 mb-3">
                   {r.attachments.map((file, i) => (
@@ -184,7 +217,7 @@ export default function AdminDashboard() {
                     <button
                       key={s}
                       onClick={(e) => {
-                        e.stopPropagation(); // ✅ FIX
+                        e.stopPropagation();
                         updateStatus(r._id, s);
                       }}
                       disabled={r.status === s}
