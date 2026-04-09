@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { verifyToken } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
+import Complaint from "../models/Complaint.js";
 import {
   createComplaint,
   myComplaints,
@@ -11,6 +12,23 @@ const router = Router();
 router.post("/", verifyToken, upload.array("attachments", 5), createComplaint);
 router.get("/mine", verifyToken, myComplaints);
 router.get("/stats", verifyToken, getStats);
+
+router.patch("/:id/vote", verifyToken, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    complaint.votes += 1;
+    await complaint.save();
+
+    res.json({ votes: complaint.votes });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 function classifyComplaint(text) {
   const msg = text.toLowerCase();

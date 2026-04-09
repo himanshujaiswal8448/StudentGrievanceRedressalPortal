@@ -45,7 +45,7 @@ export const listComplaints = async (req, res) => {
     } else {
       complaints = await Complaint.find(query)
         .populate("student", "name email")
-        .sort("-createdAt");
+        .sort({ votes: -1, createdAt: -1 });
     }
 
     res.status(200).json(complaints);
