@@ -181,9 +181,14 @@ export default function AdminDashboard() {
                 </span>
               </div>
 
-              <p className="text-sm mb-3">
+              <p className="text-sm mb-2">
                 Category:{" "}
                 <span className="text-blue-400 font-medium">{r.category}</span>
+              </p>
+
+              {/* ⭐ VOTES SHOW */}
+              <p className="text-sm text-green-400 font-semibold mb-3">
+                👍 Votes: {r.votes || 0}
               </p>
 
               {/* Attachments */}

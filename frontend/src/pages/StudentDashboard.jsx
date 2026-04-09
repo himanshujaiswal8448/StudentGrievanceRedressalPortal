@@ -37,14 +37,13 @@ export default function StudentDashboard() {
     const joinRooms = () => {
       mine.forEach((c) => {
         socket.emit("joinRoom", c._id);
-        console.log("✅ Joined:", c._id);
       });
     };
 
     if (socket.connected) {
-      joinRooms(); // already connected
+      joinRooms();
     } else {
-      socket.on("connect", joinRooms); // wait for connect
+      socket.on("connect", joinRooms);
     }
 
     return () => {
@@ -67,31 +66,13 @@ export default function StudentDashboard() {
         message: msg.message,
       };
 
-      // avoid duplicate
       setNotifications((prev) => {
         const exists = prev.find((n) => n.complaintId === msg.complaintId);
         if (exists) return prev;
         return [newNotification, ...prev];
       });
 
-      // toast
-      toast.custom((t) => (
-        <div
-          onClick={() => {
-            setSelectedId(msg.complaintId);
-            setNotifications((prev) =>
-              prev.filter((n) => n.complaintId !== msg.complaintId),
-            );
-            toast.dismiss(t.id);
-          }}
-          className="cursor-pointer bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg border border-gray-700"
-        >
-          <p className="font-semibold">💬 {newNotification.title}</p>
-          <p className="text-xs text-gray-400 truncate">
-            {newNotification.message}
-          </p>
-        </div>
-      ));
+      toast.success("New reply from admin 💬");
     };
 
     socket.off("receiveMessage");
@@ -149,7 +130,7 @@ export default function StudentDashboard() {
               )}
             </div>
 
-            {/* 🔽 DROPDOWN */}
+            {/* DROPDOWN */}
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50">
                 <div className="p-3 border-b border-gray-700 text-sm font-semibold">
@@ -212,6 +193,7 @@ export default function StudentDashboard() {
               <th>Category</th>
               <th>Status</th>
               <th>Date</th>
+              <th>Votes</th> {/* ⭐ NEW */}
             </tr>
           </thead>
 
@@ -229,6 +211,24 @@ export default function StudentDashboard() {
                 <td>{r.category}</td>
                 <td>{r.status}</td>
                 <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+
+                {/* ⭐ VOTE BUTTON */}
+                <td>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        await client.patch(`/complaints/${r._id}/vote`);
+                        fetchComplaints();
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+                  >
+                    👍 {r.votes || 0}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
