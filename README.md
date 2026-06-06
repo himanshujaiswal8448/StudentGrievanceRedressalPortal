@@ -1,250 +1,424 @@
-# 🎓 Student Grievance Redressal Portal
+# Student Grievance Redressal Portal
 
-A full-stack web application built using the **MERN Stack** that enables students to submit, track, and manage complaints efficiently.  
-The system improves transparency, communication, and resolution speed using real-time technologies.
-
----
-
-## 🚀 Live Demo
-
-- 🌐 Frontend: https://your-frontend-url.onrender.com
-- ⚙️ Backend: https://your-backend-url.onrender.com
+A full-stack MERN based Student Grievance Redressal Portal where students can submit complaints, track status, chat with admin, vote on common complaints, upload attachments, and make fee payments using Razorpay. Admin can manage complaints, update status, view analytics, chat with students, and monitor payment transactions.
 
 ---
 
-## 📌 Features
+## Live Project
 
-### 👨‍🎓 Student Side
-
-- Submit complaints with title, description, category & priority
-- Upload attachments (images/documents)
-- Track complaint status (Pending / In Progress / Resolved)
-- Real-time chat with admin 💬
-- Notification system (🔔 bell + toast alerts)
-- Dark / Light mode support
+Frontend: https://himanshu-grievance.onrender.com/  
+Backend: https://your-backend-url.onrender.com
 
 ---
 
-### 🛠️ Admin Side
+## Features
 
+### Student Features
+
+- Student registration and login
+- OTP verification for signup/login
+- JWT based authentication
+- Role based protected routes
+- Submit complaints with title, description, category, priority, and department
+- Upload complaint attachments/images
+- View own complaints
 - View all complaints
-- Update complaint status
-- View student details
-- Search & filter complaints
-  - By title
-  - Category
-  - Student name
-  - Email
-- Analytics dashboard (charts 📊)
-- Attachment preview
+- Search existing complaints
+- Vote/unvote complaints
+- View voters list
+- Real-time chat with admin
+- Notification bell for admin replies
+- Razorpay fee payment
+- View payment history
+- Dark/Light mode support
+
+### Admin Features
+
+- Admin protected dashboard
+- View all complaints
+- Search complaints by title, category, student name, or email
+- Filter complaints by status/category
+- Update complaint status: Pending, In Progress, Resolved
+- View complaint attachments
+- Real-time chat with students
+- Complaint analytics dashboard
+- View votes on complaints
+- Payment analytics dashboard
+- View all student payments
+- Revenue and transaction tracking
 
 ---
 
-### ⚡ Advanced Features
-
-- 🔥 Real-Time Chat (Socket.io)
-- 🔔 Smart Notification System (live updates)
-- 🤖 AI-based Complaint Classification
-- 👍 Voting System for prioritization
-- 📩 Email Notifications (status updates)
-- 🔍 Advanced Search System
-
----
-
-## 🧑‍💻 Tech Stack
+## Tech Stack
 
 ### Frontend
 
 - React.js
-- Tailwind CSS
 - Vite
+- Tailwind CSS
+- React Router DOM
+- Axios
+- Socket.IO Client
+- React Hot Toast
+- Recharts
+- Lucide React
+- Framer Motion
+- Razorpay Checkout
 
 ### Backend
 
 - Node.js
 - Express.js
-
-### Database
-
-- MongoDB Atlas
-
-### Other Tools
-
-- Socket.io (Real-time communication)
-- JWT (Authentication)
-- Bcrypt (Password hashing)
-- Nodemailer / Brevo (Email service)
-- Recharts (Analytics)
+- MongoDB
+- Mongoose
+- JWT
+- Bcrypt
+- Multer
+- Socket.IO
+- Razorpay
+- Nodemailer/Brevo
+- CORS
+- Helmet
+- Morgan
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-project-root/
+```txt
+StudentGrievanceRedressalPortal
 │
-├── frontend/ # React app (Landing + Auth)
-├── dashboard/ # Protected dashboard (Student/Admin)
-├── backend/ # Express API + MongoDB
+├── frontend
+│   ├── src
+│   │   ├── api
+│   │   │   └── client.js
+│   │   ├── components
+│   │   ├── context
+│   │   ├── layouts
+│   │   ├── pages
+│   │   │   ├── StudentDashboard.jsx
+│   │   │   ├── AllComplaints.jsx
+│   │   │   ├── PaymentPage.jsx
+│   │   │   ├── MyPayments.jsx
+│   │   │   ├── AdminDashboard.jsx
+│   │   │   └── AdminPayments.jsx
+│   │   ├── socket.js
+│   │   └── App.jsx
+│   └── package.json
 │
-└── README.md
+└── backend
+    ├── src
+    │   ├── config
+    │   ├── controllers
+    │   ├── middleware
+    │   ├── models
+    │   ├── routes
+    │   ├── services
+    │   └── index.js
+    └── package.json
+```
 
 ---
 
-## 🔐 Authentication
+## Routes
 
-- JWT-based authentication
-- Role-based access (Student / Admin)
-- OTP verification via email
-- Secure password hashing (bcrypt)
+### Public Routes
 
----
+```txt
+/
+ /login
+ /register
+ /verify-signup-otp
+ /verify-login-otp
+```
 
-## 📡 API Endpoints
+### Private Routes
 
-### Auth
+### Student Routes
 
-| Method | Endpoint             | Description      |
-| ------ | -------------------- | ---------------- |
-| POST   | /api/auth/register   | Register user    |
-| POST   | /api/auth/login      | Login user       |
-| POST   | /api/auth/verify-otp | OTP verification |
+```txt
+/student
+/student/all-complaints
+/student/payment
+/student/my-payments
+```
 
----
+### Admin Routes
 
-### Complaints
-
-| Method | Endpoint              | Description         |
-| ------ | --------------------- | ------------------- |
-| GET    | /api/complaints/mine  | Get user complaints |
-| POST   | /api/complaints       | Create complaint    |
-| GET    | /api/complaints/stats | Get stats           |
-
----
-
-### Admin
-
-| Method | Endpoint                         | Description        |
-| ------ | -------------------------------- | ------------------ |
-| GET    | /api/admin/complaints            | Get all complaints |
-| PATCH  | /api/admin/complaints/:id/status | Update status      |
+```txt
+/admin
+/admin/payments
+```
 
 ---
 
-### Chat (Socket.io)
+## Environment Variables
 
-- joinRoom
-- leaveRoom
-- sendMessage
-- receiveMessage
+### Backend `.env`
+
+```env
+PORT=8080
+MONGO_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_jwt_secret
+
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_password_or_smtp_key
+
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+```
+
+### Frontend `.env`
+
+```env
+VITE_API_URL=http://localhost:8080/api
+VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
+```
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation
 
-### 1️⃣ Clone Repository
+### Clone Repository
 
 ```bash
-git clone https://github.com/your-username/your-repo.git
-cd your-repo
+git clone https://github.com/your-username/student-grievance-redressal-portal.git
+cd student-grievance-redressal-portal
+```
 
-⸻
+### Backend Setup
 
-2️⃣ Backend Setup
-
+```bash
 cd backend
 npm install
-
-Create .env file:
-
-PORT=8080
-MONGO_URI=your_mongodb_uri
-JWT_SECRET=your_secret
-EMAIL_USER=your_email
-EMAIL_PASS=your_password
-VITE_API_URL=http://localhost:8080/api
-
-Run backend:
-
 npm run dev
+```
 
-⸻
+Backend runs on:
 
-3️⃣ Frontend Setup
+```txt
+http://localhost:8080
+```
 
+### Frontend Setup
+
+```bash
 cd frontend
 npm install
 npm run dev
+```
 
-⸻
+Frontend runs on:
 
-📊 System Architecture
+```txt
+http://localhost:5173
+```
 
-* React (Frontend UI)
-* Node.js + Express (Backend API)
-* MongoDB (Database)
-* Socket.io (Real-time communication)
+---
 
-⸻
+## API Endpoints
 
-🧠 AI Classification Logic
+### Auth APIs
 
-* Detects category using keywords
-* Assigns priority automatically
-* Reduces manual admin work
+```txt
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/verify-signup-otp
+POST /api/auth/verify-login-otp
+```
 
-⸻
+### Complaint APIs
 
-🔔 Notification System
+```txt
+POST /api/complaints
+GET /api/complaints/mine
+GET /api/complaints/all
+GET /api/complaints/stats
+PATCH /api/complaints/:id/vote
+```
 
-* Real-time alerts via sockets
-* Bell icon with unread count
-* Dropdown notification panel
-* Toast popups
+### Admin APIs
 
-⸻
+```txt
+GET /api/admin/complaints
+PATCH /api/admin/complaints/:id/status
+```
 
-👍 Voting System
+### Chat APIs
 
-* Users can vote on complaints
-* Helps prioritize important issues
-* Admin can sort complaints by votes
+```txt
+GET /api/chat/:complaintId
+```
 
-⸻
+### Payment APIs
 
-📦 Deployment
+```txt
+POST /api/payments/create-order
+POST /api/payments/verify
+GET /api/payments/my
+GET /api/payments/all
+```
 
-* Frontend: Render / Vercel
-* Backend: Render
-* Database: MongoDB Atlas
+---
 
-⸻
+## Important Functionalities
 
-🧪 Testing
+### Complaint Flow
 
-* Unit Testing (APIs)
-* Integration Testing
-* Manual UI Testing
+1. Student logs in.
+2. Student submits a complaint with optional attachment.
+3. Complaint is stored in MongoDB.
+4. Admin views complaint.
+5. Admin updates complaint status.
+6. Student can track status and chat with admin.
 
-⸻
+### Voting Flow
 
-🚀 Future Enhancements
+1. Student opens All Complaints page.
+2. Student searches similar issues.
+3. Student votes on existing complaint.
+4. One student can vote/unvote a complaint.
+5. Voters list can be viewed in popup.
 
-* One User One Vote system
-* Complaint Escalation system
-* Push Notifications (mobile/browser)
-* Multi-level admin hierarchy
-* Advanced analytics dashboard
+### Payment Flow
 
-⸻
+1. Student opens payment page.
+2. Student enters amount and payment type.
+3. Razorpay checkout opens.
+4. Payment success is verified.
+5. Transaction is stored in MongoDB.
+6. Student can view payment history.
+7. Admin can view all payments and revenue analytics.
 
-👨‍💻 Author
+### Real-Time Chat Flow
+
+1. Student/Admin opens complaint chat.
+2. Socket.IO joins complaint room.
+3. Messages are sent in real time.
+4. Messages are saved in MongoDB.
+5. Student receives notification for admin reply.
+
+---
+
+## Deployment on Render
+
+### Backend Render Settings
+
+Build Command:
+
+```bash
+npm install
+```
+
+Start Command:
+
+```bash
+npm start
+```
+
+Add backend environment variables in Render dashboard.
+
+### Frontend Render Settings
+
+Build Command:
+
+```bash
+npm install && npm run build
+```
+
+Publish Directory:
+
+```txt
+dist
+```
+
+Add frontend environment variables:
+
+```env
+VITE_API_URL=https://your-backend-url.onrender.com/api
+VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
+```
+
+### Backend CORS
+
+Update backend allowed origins:
+
+```js
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://your-frontend-url.onrender.com",
+];
+```
+
+---
+
+## Testing Checklist
+
+- Register student
+- Verify signup OTP
+- Login student
+- Submit complaint without attachment
+- Submit complaint with attachment
+- View complaint in student dashboard
+- View complaint in admin dashboard
+- Update status from admin
+- Test real-time chat
+- Test notification bell
+- Open all complaints
+- Search complaint
+- Vote/unvote complaint
+- View voters popup
+- Make Razorpay test payment
+- Check student payment history
+- Check admin payment analytics
+- Test protected routes
+- Test dark/light mode
+- Test refresh on every route
+
+---
+
+## Razorpay Test Payment
+
+Use Razorpay test mode.
+
+Example test card:
+
+```txt
+RuPay
+Card Number: 6527 6589 0000 1005
+Expiry: Any future date
+CVV: 123
+OTP: 123456
+```
+
+Net banking test mode can also be used.
+
+---
+
+## Future Enhancements
+
+- Payment receipt download
+- Export complaints report
+- Export payments report
+- Admin notification center
+- Student profile page
+- Monthly revenue chart
+- Complaint resolution time analytics
+- Super Admin role
+- Department-wise complaint assignment
+
+---
+
+## Author
 
 Himanshu Kumar
-🔗 GitHub: https://github.com/himanshujaiswal8448
+Full Stack MERN Developer
+LinkedIn : [https://www.linkedin.com/in/himanshujaiswal8448/ ](https://www.linkedin.com/in/himanshujaiswal8448/)
+GitHub: [https://github.com/himanshujaiswal8448](https://github.com/himanshujaiswal8448)
 
-⸻
+```
 
-📜 License
-
-This project is developed for academic purposes.
 ```

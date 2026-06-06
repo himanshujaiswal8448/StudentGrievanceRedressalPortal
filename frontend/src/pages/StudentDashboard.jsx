@@ -1,13 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import client from "../api/client.js";
 import ComplaintForm from "./ComplaintForm.jsx";
 import ChatBox from "../components/ChatBox.jsx";
 import socket from "../socket";
 import toast from "react-hot-toast";
+import {
+  Bell,
+  Plus,
+  CreditCard,
+  ReceiptText,
+  ClipboardList,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  MessageCircle,
+} from "lucide-react";
 
 export default function StudentDashboard() {
   const { darkMode } = useOutletContext();
+  const navigate = useNavigate();
 
   const [mine, setMine] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -16,13 +28,24 @@ export default function StudentDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // ✅ fetch complaints
+  const getImageUrl = (path) => {
+    const base = import.meta.env.VITE_API_URL?.replace("/api", "") || "";
+    return `${base}/${path}`;
+  };
+
+  const cardClass = darkMode
+    ? "bg-gray-900/70 border-gray-800 text-gray-100"
+    : "bg-white border-gray-200 text-gray-900 shadow-md";
+
+  const mutedText = darkMode ? "text-gray-400" : "text-gray-600";
+
   const fetchComplaints = async () => {
     try {
       const { data } = await client.get("/complaints/mine");
       setMine(data);
     } catch (err) {
       console.error("❌ Failed to fetch complaints:", err);
+      toast.error("Failed to fetch complaints");
     }
   };
 
@@ -30,21 +53,15 @@ export default function StudentDashboard() {
     fetchComplaints();
   }, []);
 
-  // ✅ JOIN ROOMS
   useEffect(() => {
     if (!mine.length) return;
 
     const joinRooms = () => {
-      mine.forEach((c) => {
-        socket.emit("joinRoom", c._id);
-      });
+      mine.forEach((c) => socket.emit("joinRoom", c._id));
     };
 
-    if (socket.connected) {
-      joinRooms();
-    } else {
-      socket.on("connect", joinRooms);
-    }
+    if (socket.connected) joinRooms();
+    else socket.on("connect", joinRooms);
 
     return () => {
       mine.forEach((c) => socket.emit("leaveRoom", c._id));
@@ -52,7 +69,6 @@ export default function StudentDashboard() {
     };
   }, [mine]);
 
-  // ✅ SOCKET LISTENER
   useEffect(() => {
     const handler = (msg) => {
       if (msg.sender !== "admin") return;
@@ -81,64 +97,104 @@ export default function StudentDashboard() {
     return () => socket.off("receiveMessage", handler);
   }, [mine]);
 
-  // stats
   const resolved = mine.filter((m) => m.status === "resolved").length;
   const pending = mine.filter((m) => m.status === "pending").length;
   const inProgress = mine.filter((m) => m.status === "in_progress").length;
 
   const summary = [
-    { title: "Total", value: mine.length, color: "bg-gray-800 text-white" },
+    {
+      title: "Total Complaints",
+      value: mine.length,
+      icon: ClipboardList,
+      color: darkMode
+        ? "bg-gray-800 text-gray-100"
+        : "bg-slate-100 text-slate-800",
+    },
     {
       title: "Pending",
       value: pending,
-      color: "bg-yellow-500/20 text-yellow-400",
+      icon: AlertTriangle,
+      color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
     },
     {
       title: "In Progress",
       value: inProgress,
-      color: "bg-blue-500/20 text-blue-400",
+      icon: Clock,
+      color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
     },
     {
       title: "Resolved",
       value: resolved,
-      color: "bg-green-500/20 text-green-400",
+      icon: CheckCircle,
+      color: "bg-green-500/20 text-green-400 border-green-500/30",
     },
   ];
+
+  const statusBadge = (status) => {
+    if (status === "pending") {
+      return "bg-yellow-500/20 text-yellow-400";
+    }
+    if (status === "in_progress") {
+      return "bg-blue-500/20 text-blue-400";
+    }
+    return "bg-green-500/20 text-green-400";
+  };
 
   return (
     <div
       className={`min-h-screen p-6 ${
-        darkMode ? "bg-gray-950 text-gray-100" : "bg-gray-50 text-gray-900"
+        darkMode
+          ? "bg-gray-950 text-gray-100"
+          : "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900"
       }`}
     >
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Student Dashboard</h1>
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Student Dashboard</h1>
+          <p className={`mt-1 ${mutedText}`}>
+            Track your complaints, chat with admin, and manage fee payments.
+          </p>
+        </div>
 
-        <div className="flex items-center gap-4">
-          {/* 🔔 BELL */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* NOTIFICATION */}
           <div className="relative">
-            <div
+            <button
               onClick={() => setShowDropdown((p) => !p)}
-              className="cursor-pointer"
+              className={`relative p-3 rounded-xl border transition ${
+                darkMode
+                  ? "bg-gray-900 border-gray-800 hover:bg-gray-800"
+                  : "bg-white border-gray-200 hover:bg-blue-50 shadow-sm"
+              }`}
             >
-              🔔
+              <Bell size={20} />
+
               {notifications.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-5 h-5 px-1 rounded-full flex items-center justify-center">
                   {notifications.length}
                 </span>
               )}
-            </div>
+            </button>
 
-            {/* DROPDOWN */}
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-72 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50">
-                <div className="p-3 border-b border-gray-700 text-sm font-semibold">
+              <div
+                className={`absolute right-0 mt-2 w-80 rounded-2xl shadow-xl z-50 border overflow-hidden ${
+                  darkMode
+                    ? "bg-gray-900 border-gray-800"
+                    : "bg-white border-gray-200"
+                }`}
+              >
+                <div
+                  className={`p-3 border-b text-sm font-semibold ${
+                    darkMode ? "border-gray-800" : "border-gray-200"
+                  }`}
+                >
                   Notifications
                 </div>
 
                 {notifications.length === 0 ? (
-                  <p className="p-3 text-gray-400 text-sm">No new messages</p>
+                  <p className={`p-4 text-sm ${mutedText}`}>No new messages</p>
                 ) : (
                   notifications.map((n) => (
                     <div
@@ -150,10 +206,14 @@ export default function StudentDashboard() {
                         );
                         setShowDropdown(false);
                       }}
-                      className="p-3 border-b border-gray-800 hover:bg-gray-800 cursor-pointer"
+                      className={`p-3 border-b cursor-pointer transition ${
+                        darkMode
+                          ? "border-gray-800 hover:bg-gray-800"
+                          : "border-gray-100 hover:bg-blue-50"
+                      }`}
                     >
                       <p className="text-sm font-medium">💬 {n.title}</p>
-                      <p className="text-xs text-gray-400 truncate">
+                      <p className={`text-xs truncate ${mutedText}`}>
                         {n.message}
                       </p>
                     </div>
@@ -164,75 +224,166 @@ export default function StudentDashboard() {
           </div>
 
           <button
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+            onClick={() => navigate("/student/payment")}
+            className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:scale-105 transition-all duration-300 text-white px-5 py-3 rounded-xl shadow-lg font-semibold"
           >
-            + Complaint
+            <CreditCard size={18} />
+            Pay Fees
+          </button>
+
+          <button
+            onClick={() => navigate("/student/my-payments")}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-105 transition-all duration-300 text-white px-5 py-3 rounded-xl shadow-lg font-semibold"
+          >
+            <ReceiptText size={18} />
+            My Payments
+          </button>
+
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:scale-105 transition-all duration-300 text-white px-5 py-3 rounded-xl shadow-lg font-semibold"
+          >
+            <Plus size={18} />
+            Complaint
           </button>
         </div>
       </div>
 
       {/* STATS */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {summary.map((c) => (
-          <div key={c.title} className={`p-4 rounded-xl ${c.color}`}>
-            <h3>{c.title}</h3>
-            <p className="text-2xl font-bold">{c.value}</p>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        {summary.map(({ title, value, icon: Icon, color }) => (
+          <div
+            key={title}
+            className={`p-5 rounded-2xl border shadow-lg ${color}`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-medium">{title}</h3>
+                <p className="text-3xl font-bold mt-2">{value}</p>
+              </div>
+              <Icon size={28} />
+            </div>
           </div>
         ))}
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-4">
-        <h2 className="mb-3 font-semibold">My Complaints</h2>
+      {/* COMPLAINTS TABLE */}
+      <div className={`rounded-2xl border shadow-lg p-5 ${cardClass}`}>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">My Complaints</h2>
+            <p className={`text-sm ${mutedText}`}>
+              Click any complaint row to open chat.
+            </p>
+          </div>
+        </div>
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b">
-              <th>Title</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Votes</th> {/* ⭐ NEW */}
-            </tr>
-          </thead>
-
-          <tbody>
-            {mine.map((r) => (
-              <tr
-                key={r._id}
-                onClick={() => {
-                  setSelectedId(r._id);
-                  setNotifications([]);
-                }}
-                className="cursor-pointer border-b hover:bg-gray-100 dark:hover:bg-gray-800"
+        {mine.length === 0 ? (
+          <div
+            className={`text-center py-10 rounded-xl border ${
+              darkMode
+                ? "border-gray-800 text-gray-400"
+                : "border-gray-200 text-gray-500"
+            }`}
+          >
+            No complaints submitted yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead
+                className={
+                  darkMode
+                    ? "text-gray-300 border-b border-gray-800"
+                    : "text-gray-700 border-b border-gray-200"
+                }
               >
-                <td className="py-2">{r.title}</td>
-                <td>{r.category}</td>
-                <td>{r.status}</td>
-                <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                <tr className="text-left">
+                  <th className="py-3 px-2">Title</th>
+                  <th className="py-3 px-2">Category</th>
+                  <th className="py-3 px-2">Status</th>
+                  <th className="py-3 px-2">Date</th>
+                  <th className="py-3 px-2">Attachment</th>
+                  <th className="py-3 px-2">Chat</th>
+                </tr>
+              </thead>
 
-                {/* ⭐ VOTE BUTTON */}
-                <td>
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        await client.patch(`/complaints/${r._id}/vote`);
-                        fetchComplaints();
-                      } catch (err) {
-                        console.error(err);
-                      }
+              <tbody>
+                {mine.map((r) => (
+                  <tr
+                    key={r._id}
+                    onClick={() => {
+                      setSelectedId(r._id);
+                      setNotifications([]);
                     }}
-                    className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+                    className={`cursor-pointer border-b transition ${
+                      darkMode
+                        ? "border-gray-800 hover:bg-gray-800/70"
+                        : "border-gray-100 hover:bg-blue-50"
+                    }`}
                   >
-                    👍 {r.votes || 0}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    <td className="py-3 px-2 font-medium">{r.title}</td>
+
+                    <td className="py-3 px-2 capitalize">
+                      {r.category || "-"}
+                    </td>
+
+                    <td className="py-3 px-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs capitalize ${statusBadge(
+                          r.status,
+                        )}`}
+                      >
+                        {r.status?.replace("_", " ")}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-2">
+                      {new Date(r.createdAt).toLocaleDateString("en-IN")}
+                    </td>
+
+                    <td className="py-3 px-2">
+                      {r.attachments?.length > 0 ? (
+                        <div className="flex gap-2">
+                          {r.attachments.slice(0, 2).map((file, i) => (
+                            <a
+                              key={i}
+                              href={getImageUrl(file.path)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <img
+                                src={getImageUrl(file.path)}
+                                alt="attachment"
+                                className="h-10 w-10 object-cover rounded-lg border border-gray-700 hover:scale-105 transition"
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className={mutedText}>No file</span>
+                      )}
+                    </td>
+
+                    <td className="py-3 px-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedId(r._id);
+                        }}
+                        className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs transition"
+                      >
+                        <MessageCircle size={14} />
+                        Open
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* CHAT */}
@@ -244,13 +395,19 @@ export default function StudentDashboard() {
         />
       )}
 
-      {/* MODAL */}
+      {/* COMPLAINT MODAL */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-          <div className="bg-white dark:bg-gray-900 p-5 rounded-xl w-full max-w-md relative">
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 px-4">
+          <div
+            className={`w-full max-w-md relative rounded-2xl p-4 shadow-2xl max-h-[92vh] overflow-hidden ${
+              darkMode
+                ? "bg-gray-900 border border-gray-700"
+                : "bg-white border border-gray-200"
+            }`}
+          >
             <button
               onClick={() => setShowForm(false)}
-              className="absolute top-2 right-3 text-xl"
+              className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center z-10"
             >
               ×
             </button>

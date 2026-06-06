@@ -11,11 +11,13 @@ import authRoutes from "./routes/auth.routes.js";
 import complaintRoutes from "./routes/complaint.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
 
 import { sendEmail } from "./services/mailService.js";
 import { Server } from "socket.io";
 import ChatMessage from "./models/ChatMessage.js";
 
+const PORT = process.env.PORT || 8080;
 const app = express();
 
 // path setup
@@ -63,6 +65,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // test mail
 app.get("/test-mail", async (req, res) => {
@@ -80,7 +83,6 @@ app.get("/test-mail", async (req, res) => {
 });
 
 // start server
-const PORT = process.env.PORT || 8080;
 
 await connectDB();
 

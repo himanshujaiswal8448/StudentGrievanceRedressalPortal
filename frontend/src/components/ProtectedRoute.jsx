@@ -1,28 +1,31 @@
-// src/components/ProtectedRoute.jsx
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
+import { Navigate, useLocation } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 export default function ProtectedRoute({ children, role }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useContext(AuthContext);
+  const location = useLocation();
 
-  // 🔴 WAIT until auth is restored
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-400">
-        Checking session...
-      </div>
-    );
+    return <div className="p-6">Loading...</div>;
   }
 
-  // Not logged in
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Role-based protection
-  if (role && user.role !== role && user.role !== "superAdmin") {
-    return <Navigate to="/dashboard" replace />;
+  const userRole = user.role;
+
+  if (role) {
+    const allowedRoles = Array.isArray(role) ? role : [role];
+
+    if (!allowedRoles.includes(userRole)) {
+      if (userRole === "admin" || userRole === "superAdmin") {
+        return <Navigate to="/admin" replace />;
+      }
+
+      return <Navigate to="/student" replace />;
+    }
   }
 
   return children;

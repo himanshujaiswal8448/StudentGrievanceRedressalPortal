@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import client from "../api/client.js";
 import toast from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
@@ -9,16 +9,20 @@ import {
   Clock,
   AlertTriangle,
   Search,
+  CreditCard,
+  MessageCircle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import AdminChat from "../components/AdminChat";
 
 export default function AdminDashboard() {
   const { darkMode } = useOutletContext();
+  const navigate = useNavigate();
 
   const [list, setList] = useState([]);
   const [filter, setFilter] = useState({ status: "", category: "" });
-  const [search, setSearch] = useState(""); // 🔥 NEW
+  const [search, setSearch] = useState("");
   const [stats, setStats] = useState({
     pending: 0,
     in_progress: 0,
@@ -26,11 +30,21 @@ export default function AdminDashboard() {
   });
   const [selectedComplaintId, setSelectedComplaintId] = useState(null);
 
+  const cardClass = darkMode
+    ? "bg-gray-900/70 border-gray-800 text-gray-100"
+    : "bg-white border-gray-200 text-gray-900 shadow-md";
+
+  const mutedText = darkMode ? "text-gray-400" : "text-gray-600";
+
+  const inputClass = darkMode
+    ? "bg-gray-900 border-gray-700 text-white placeholder-gray-500"
+    : "bg-white border-gray-200 text-gray-900 placeholder-gray-400 shadow-sm";
+
   const fetchList = async () => {
     try {
       const params = new URLSearchParams({
         ...filter,
-        search, // 🔥 NEW
+        search,
       });
 
       const { data } = await client.get(`/admin/complaints?${params}`);
@@ -41,12 +55,16 @@ export default function AdminDashboard() {
       const resolved = data.filter((r) => r.status === "resolved").length;
 
       setStats({ pending, in_progress: inProgress, resolved });
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to fetch complaints.");
     }
   };
 
-  // 🔥 debounce search
+  useEffect(() => {
+    fetchList();
+  }, []);
+
   useEffect(() => {
     const delay = setTimeout(() => {
       fetchList();
@@ -55,16 +73,13 @@ export default function AdminDashboard() {
     return () => clearTimeout(delay);
   }, [search, filter]);
 
-  useEffect(() => {
-    fetchList();
-  }, []);
-
   const updateStatus = async (id, status) => {
     try {
       await client.patch(`/admin/complaints/${id}/status`, { status });
-      toast.success(`Marked as ${status}`);
+      toast.success(`Marked as ${status.replace("_", " ")}`);
       fetchList();
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to update status.");
     }
   };
@@ -74,6 +89,37 @@ export default function AdminDashboard() {
     return `${base}/${path}`;
   };
 
+  const totalComplaints = list.length;
+
+  const summary = [
+    {
+      label: "Total",
+      val: totalComplaints,
+      icon: ClipboardList,
+      color: darkMode
+        ? "bg-gray-800 text-gray-100"
+        : "bg-slate-100 text-slate-800",
+    },
+    {
+      label: "Pending",
+      val: stats.pending,
+      icon: AlertTriangle,
+      color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    },
+    {
+      label: "In Progress",
+      val: stats.in_progress,
+      icon: Clock,
+      color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    },
+    {
+      label: "Resolved",
+      val: stats.resolved,
+      icon: CheckCircle,
+      color: "bg-green-500/20 text-green-400 border-green-500/30",
+    },
+  ];
+
   const COLORS = ["#FACC15", "#3B82F6", "#22C55E"];
 
   const chartData = [
@@ -82,174 +128,286 @@ export default function AdminDashboard() {
     { name: "Resolved", value: stats.resolved },
   ];
 
+  const statusBadge = (status) => {
+    if (status === "pending") {
+      return "bg-yellow-500/20 text-yellow-400";
+    }
+
+    if (status === "in_progress") {
+      return "bg-blue-500/20 text-blue-400";
+    }
+
+    return "bg-green-500/20 text-green-400";
+  };
+
   return (
     <div
       className={`min-h-screen p-6 ${
-        darkMode ? "bg-gray-950 text-gray-100" : "bg-gray-50 text-gray-900"
+        darkMode
+          ? "bg-gray-950 text-gray-100"
+          : "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900"
       }`}
     >
-      <h1 className="text-3xl font-semibold mb-6 flex items-center gap-2">
-        <ClipboardList size={26} className="text-blue-400" />
-        Admin Dashboard
-      </h1>
+      {/* HEADER */}
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <ClipboardList size={30} className="text-blue-500" />
+            Admin Dashboard
+          </h1>
 
-      {/* 🔥 SEARCH BAR */}
-      <div className="mb-6 relative">
-        <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-        <input
-          type="text"
-          placeholder="Search complaints (name, mail, title, category...)"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 rounded-xl bg-gray-900 border border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-        />
+          <p className={`mt-1 ${mutedText}`}>
+            Manage student complaints, update status, and monitor activity.
+          </p>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid sm:grid-cols-3 gap-6 mb-8">
-        {[
-          {
-            label: "Pending",
-            val: stats.pending,
-            color: "text-yellow-400",
-            icon: AlertTriangle,
-          },
-          {
-            label: "In Progress",
-            val: stats.in_progress,
-            color: "text-blue-400",
-            icon: Clock,
-          },
-          {
-            label: "Resolved",
-            val: stats.resolved,
-            color: "text-green-400",
-            icon: CheckCircle,
-          },
-        ].map(({ label, val, color, icon: Icon }) => (
+      {/* SEARCH + FILTER */}
+      <div className={`rounded-2xl border shadow-lg p-5 mb-8 ${cardClass}`}>
+        <div className="grid lg:grid-cols-3 gap-4">
+          <div className="relative lg:col-span-2">
+            <Search
+              className="absolute left-3 top-3.5 text-gray-400"
+              size={18}
+            />
+
+            <input
+              type="text"
+              placeholder="Search complaints by title, category, student name, email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-blue-500 ${inputClass}`}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              value={filter.status}
+              onChange={(e) =>
+                setFilter((prev) => ({ ...prev, status: e.target.value }))
+              }
+              className={`w-full px-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-blue-500 ${inputClass}`}
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+
+            <select
+              value={filter.category}
+              onChange={(e) =>
+                setFilter((prev) => ({ ...prev, category: e.target.value }))
+              }
+              className={`w-full px-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-blue-500 ${inputClass}`}
+            >
+              <option value="">All Category</option>
+              <option value="academics">Academics</option>
+              <option value="exam">Exam</option>
+              <option value="hostel">Hostel</option>
+              <option value="administration">Administration</option>
+              <option value="library">Library</option>
+              <option value="technical">Technical</option>
+              <option value="financial">Financial</option>
+              <option value="others">Others</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* STATS */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        {summary.map(({ label, val, icon: Icon, color }) => (
           <motion.div
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.03 }}
             key={label}
-            className="p-5 rounded-2xl shadow-lg bg-gray-900/70 border border-gray-800 flex justify-between items-center"
+            className={`p-5 rounded-2xl border shadow-lg ${color}`}
           >
-            <div>
-              <h3 className="text-sm text-gray-400">{label}</h3>
-              <p className="text-3xl font-bold mt-1">{val}</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-medium">{label}</h3>
+                <p className="text-3xl font-bold mt-2">{val}</p>
+              </div>
+
+              <Icon size={30} />
             </div>
-            <Icon size={28} className={color} />
           </motion.div>
         ))}
       </div>
 
-      {/* Complaints */}
+      {/* COMPLAINTS */}
+      <div className="mb-5">
+        <h2 className="text-2xl font-bold">Complaints</h2>
+        <p className={`text-sm ${mutedText}`}>
+          Showing {list.length} complaints
+        </p>
+      </div>
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {list.length === 0 ? (
-          <p className="col-span-full text-center text-gray-500 italic">
-            No complaints found.
-          </p>
+          <div
+            className={`col-span-full p-8 text-center rounded-2xl border ${cardClass}`}
+          >
+            <p className={mutedText}>No complaints found.</p>
+          </div>
         ) : (
           list.map((r) => (
             <motion.div
               key={r._id}
               onClick={() => setSelectedComplaintId(r._id)}
-              whileHover={{ scale: 1.02 }}
-              className={`p-6 rounded-2xl shadow-lg border cursor-pointer ${
+              whileHover={{ y: -4 }}
+              className={`group p-5 rounded-2xl border shadow-lg cursor-pointer transition-all duration-300 ${
                 selectedComplaintId === r._id
-                  ? "border-blue-500 bg-blue-500/10"
+                  ? "border-blue-500 bg-blue-500/10 shadow-blue-500/20"
                   : darkMode
-                    ? "bg-gray-900/70 border-gray-800"
-                    : "bg-white"
+                    ? "bg-gray-900/80 border-gray-800 hover:border-blue-500/50"
+                    : "bg-white border-gray-200 hover:border-blue-400 hover:shadow-blue-100"
               }`}
             >
-              <div className="flex justify-between items-start mb-3">
+              <div className="flex justify-between gap-3 mb-4">
                 <div>
-                  <h2 className="font-semibold text-lg">{r.title}</h2>
-                  <p className="text-sm text-gray-400">
-                    {r.student?.name} • {r.student?.email}
+                  <h2 className="font-bold text-lg group-hover:text-blue-500 transition">
+                    {r.title}
+                  </h2>
+
+                  <p className={`text-sm mt-1 ${mutedText}`}>
+                    {r.student?.name || "Student"}
+                  </p>
+
+                  <p className={`text-xs ${mutedText}`}>
+                    {r.student?.email || "No email"}
                   </p>
                 </div>
+
                 <span
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    r.status === "pending"
-                      ? "bg-yellow-500/20 text-yellow-400"
-                      : r.status === "in_progress"
-                        ? "bg-blue-500/20 text-blue-400"
-                        : "bg-green-500/20 text-green-400"
-                  }`}
+                  className={`h-fit px-3 py-1 rounded-full text-xs font-semibold capitalize ${statusBadge(
+                    r.status,
+                  )}`}
                 >
-                  {r.status.replace("_", " ")}
+                  {r.status?.replace("_", " ")}
                 </span>
               </div>
 
-              <p className="text-sm mb-2">
-                Category:{" "}
-                <span className="text-blue-400 font-medium">{r.category}</span>
-              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="px-3 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400 capitalize">
+                  {r.category || "others"}
+                </span>
 
-              {/* ⭐ VOTES SHOW */}
-              <p className="text-sm text-green-400 font-semibold mb-3">
-                👍 Votes: {r.votes || 0}
-              </p>
+                {r.priority && (
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs capitalize ${
+                      r.priority === "high"
+                        ? "bg-red-500/20 text-red-400"
+                        : r.priority === "medium"
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : "bg-green-500/20 text-green-400"
+                    }`}
+                  >
+                    {r.priority} priority
+                  </span>
+                )}
 
-              {/* Attachments */}
+                <span className="px-3 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
+                  👍 {r.votes || 0} votes
+                </span>
+              </div>
+
+              {r.description && (
+                <p className={`text-sm line-clamp-3 mb-4 ${mutedText}`}>
+                  {r.description}
+                </p>
+              )}
+
               {r.attachments?.length > 0 && (
-                <div className="flex gap-2 mb-3">
-                  {r.attachments.map((file, i) => (
-                    <a
-                      key={i}
-                      href={getImageUrl(file.path)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <img
-                        src={getImageUrl(file.path)}
-                        alt="attachment"
-                        className="h-20 w-20 object-cover rounded-xl border border-gray-700 hover:scale-105 transition"
-                      />
-                    </a>
-                  ))}
+                <div className="mb-4">
+                  <p
+                    className={`text-xs mb-2 flex items-center gap-1 ${mutedText}`}
+                  >
+                    <ImageIcon size={14} />
+                    {r.attachments.length} Attachment(s)
+                  </p>
+
+                  <div className="flex gap-2 flex-wrap">
+                    {r.attachments.slice(0, 4).map((file, i) => (
+                      <a
+                        key={i}
+                        href={getImageUrl(file.path)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <img
+                          src={getImageUrl(file.path)}
+                          alt="attachment"
+                          className="h-14 w-14 object-cover rounded-xl border border-gray-700 hover:scale-105 transition"
+                        />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-3 border-t border-gray-800">
-                <small className="text-gray-500 text-xs">
-                  {new Date(r.updatedAt).toLocaleDateString("en-IN")}
+              <div
+                className={`flex justify-between items-center pt-4 border-t ${
+                  darkMode ? "border-gray-800" : "border-gray-200"
+                }`}
+              >
+                <small className={mutedText}>
+                  Updated {new Date(r.updatedAt).toLocaleDateString("en-IN")}
                 </small>
 
-                <div className="flex gap-2">
-                  {["pending", "in_progress", "resolved"].map((s) => (
-                    <button
-                      key={s}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateStatus(r._id, s);
-                      }}
-                      disabled={r.status === s}
-                      className={`px-3 py-1.5 text-xs rounded-lg ${
-                        r.status === s
-                          ? "bg-gray-700 text-gray-400"
-                          : "bg-blue-600 hover:bg-blue-700 text-white"
-                      }`}
-                    >
-                      {s.replace("_", " ")}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedComplaintId(r._id);
+                  }}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1 transition"
+                >
+                  <MessageCircle size={13} />
+                  Chat
+                </button>
+              </div>
+
+              <div className="flex gap-2 flex-wrap mt-4">
+                {["pending", "in_progress", "resolved"].map((status) => (
+                  <button
+                    key={status}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateStatus(r._id, status);
+                    }}
+                    disabled={r.status === status}
+                    className={`px-3 py-1.5 text-xs rounded-lg transition capitalize ${
+                      r.status === status
+                        ? darkMode
+                          ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    }`}
+                  >
+                    {status.replace("_", " ")}
+                  </button>
+                ))}
               </div>
             </motion.div>
           ))
         )}
       </div>
 
-      {/* Chart */}
-      <motion.div className="mt-10 rounded-2xl shadow-lg p-6 bg-gray-900/70 border border-gray-800">
-        <h2 className="text-lg font-semibold mb-3">Complaint Distribution</h2>
+      {/* CHART */}
+      <motion.div
+        className={`mt-10 rounded-2xl shadow-lg p-6 border ${cardClass}`}
+      >
+        <h2 className="text-lg font-semibold mb-1">Complaint Distribution</h2>
+        <p className={`text-sm mb-4 ${mutedText}`}>
+          Current complaint status overview.
+        </p>
+
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie data={chartData} dataKey="value" outerRadius={100} label>
-              {chartData.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              {chartData.map((_, index) => (
+                <Cell key={index} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip />
@@ -257,11 +415,18 @@ export default function AdminDashboard() {
         </ResponsiveContainer>
       </motion.div>
 
-      {/* Chat */}
+      {/* CHAT */}
       {selectedComplaintId && (
-        <div className="mt-6 p-4 rounded-xl border border-blue-500 bg-gray-900/60">
-          <div className="flex justify-between mb-2">
+        <div
+          className={`mt-6 p-5 rounded-2xl border shadow-lg ${
+            darkMode
+              ? "border-blue-500 bg-gray-900/70"
+              : "border-blue-200 bg-white"
+          }`}
+        >
+          <div className="flex justify-between mb-3">
             <h3 className="text-lg font-semibold">Complaint Chat</h3>
+
             <button
               onClick={() => setSelectedComplaintId(null)}
               className="text-red-400 text-sm"

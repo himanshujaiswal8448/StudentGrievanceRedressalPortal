@@ -17,11 +17,13 @@ const ComplaintSchema = new mongoose.Schema(
     category: {
       type: String,
       enum: [
-        "hostel",
-        "exam",
         "academics",
+        "exam",
+        "hostel",
         "administration",
         "library",
+        "technical",
+        "financial",
         "others",
       ],
       required: true,
@@ -50,6 +52,13 @@ const ComplaintSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    votedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true },
 );
