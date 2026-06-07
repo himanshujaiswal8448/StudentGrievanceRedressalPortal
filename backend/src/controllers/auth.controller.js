@@ -34,7 +34,7 @@ export const register = async (req, res) => {
     <p>Hello,</p>
     <p>Your verification code is:</p>
     <p style="font-size:18px; font-weight:bold; letter-spacing:3px;">
-      ${otp.split("").join(" ")}
+      ${otp.split("").join("")}
     </p>
     <p>This code expires in 10 minutes.</p>
   `,
@@ -101,7 +101,7 @@ export const login = async (req, res) => {
       html: `
     <p>Your login verification code is:</p>
     <p style="font-size:18px; font-weight:bold; letter-spacing:3px;">
-      ${otp.split("").join(" ")}
+      ${otp.split("").join("")}
     </p>
     <p>Valid for 5 minutes.</p>
   `,
@@ -132,7 +132,7 @@ export const verifyLoginOtp = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "7d" },
     );
 
     console.log("Login successful for:", user.email);

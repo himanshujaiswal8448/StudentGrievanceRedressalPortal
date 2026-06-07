@@ -1,10 +1,10 @@
 import Complaint from "../models/Complaint.js";
 import { sendEmail } from "../services/mailService.js";
 
-/* =========================
+/* 
    LIST COMPLAINTS (ADMIN)
    + SEARCH + FILTER
-========================= */
+ */
 export const listComplaints = async (req, res) => {
   try {
     const { status, category, from, to, search } = req.query;
@@ -55,10 +55,10 @@ export const listComplaints = async (req, res) => {
   }
 };
 
-/* =========================
+/* 
    UPDATE COMPLAINT STATUS
    + EMAIL NOTIFICATION
-========================= */
+ */
 export const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;

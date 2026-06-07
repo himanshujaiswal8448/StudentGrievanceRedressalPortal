@@ -69,9 +69,9 @@ export const myComplaints = async (req, res) => {
   }
 };
 
-/* =========================
+/* 
    ALL COMPLAINTS
-========================= */
+ */
 export const allComplaints = async (req, res) => {
   try {
     const complaints = await Complaint.find()
@@ -85,9 +85,9 @@ export const allComplaints = async (req, res) => {
   }
 };
 
-/* =========================
+/* 
    STATS
-========================= */
+ */
 export const getStats = async (req, res) => {
   try {
     const byStatus = await Complaint.aggregate([

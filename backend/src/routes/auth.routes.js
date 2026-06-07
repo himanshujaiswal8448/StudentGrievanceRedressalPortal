@@ -8,7 +8,7 @@ import {
 
 const router = Router();
 
-/* ================= AUTH ROUTES ================= */
+/*  AUTH ROUTES  */
 router.post("/register", register); // signup + send OTP
 router.post("/verify-otp", verifyOtp); // verify signup OTP
 router.post("/login", login); // login + send OTP
