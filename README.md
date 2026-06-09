@@ -6,8 +6,8 @@ A full-stack MERN based Student Grievance Redressal Portal where students can su
 
 ## Live Project
 
-Frontend: https://himanshu-grievance.onrender.com/  
-Backend: https://your-backend-url.onrender.com
+Frontend: https://himanshu-grievance.onrender.com
+Backend: https://himanshu-student.onrender.com
 
 ---
 
@@ -414,9 +414,9 @@ Net banking test mode can also be used.
 
 ## Author
 
-Himanshu Kumar
-Full Stack MERN Developer
-LinkedIn : [https://www.linkedin.com/in/himanshujaiswal8448/ ](https://www.linkedin.com/in/himanshujaiswal8448/)
+Himanshu Kumar\
+Full Stack MERN Developer\
+LinkedIn : [https://www.linkedin.com/in/himanshujaiswal8448/ ](https://www.linkedin.com/in/himanshujaiswal8448/)\
 GitHub: [https://github.com/himanshujaiswal8448](https://github.com/himanshujaiswal8448)
 
 ```
