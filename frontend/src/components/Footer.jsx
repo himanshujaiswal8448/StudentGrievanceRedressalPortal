@@ -46,7 +46,7 @@ export default function Footer({ darkMode = true }) {
                   darkMode ? "text-gray-300" : "text-gray-700"
                 }`}
               >
-                Mail Id
+                Contact
               </a>
             </p>
             <p>
