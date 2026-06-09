@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Heart } from "lucide-react";
+import { Mail, Heart, Globe } from "lucide-react";
 
 export default function Footer({ darkMode = true }) {
   return (
@@ -41,12 +41,30 @@ export default function Footer({ darkMode = true }) {
                 }`}
               />
               <a
-                href="mailto:himaanshu9708@gmail.com"
+                href="mailto:himanshujaiswal8448@gmail.com"
                 className={`hover:underline ${
                   darkMode ? "text-gray-300" : "text-gray-700"
                 }`}
               >
-                himaanshu9708@gmail.com
+                Mail Id
+              </a>
+            </p>
+            <p>
+              <Globe
+                size={14}
+                className={`inline mr-2 ${
+                  darkMode ? "text-blue-400" : "text-blue-600"
+                }`}
+              />
+              <a
+                href="https://www.linkedin.com/in/himanshujaiswal8448"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`hover:underline ${
+                  darkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                LinkedIn
               </a>
             </p>
 
